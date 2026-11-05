@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, X, Tag, Store } from 'lucide-react';
 import useProducts from '../../hooks/useProducts.js';
 import useDebounce from '../../hooks/useDebounce.js';
 import { formatPKR } from '../../utils/format.js';
 import ProductImage from '../common/ProductImage.jsx';
+import { matchesQuery } from '../../utils/productFilters.js';
 
 /**
  * Live search with suggestions for products, categories and brands.
@@ -13,17 +14,25 @@ import ProductImage from '../common/ProductImage.jsx';
 export default function ProductSearch({ autoFocus = false, onNavigate, className = '' }) {
   const { products, categories } = useProducts();
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
+  const location = useLocation();
+  const [params] = useSearchParams();
+  const urlQuery = location.pathname === '/shop' ? params.get('q') || '' : '';
+  const [query, setQuery] = useState(urlQuery);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const debounced = useDebounce(query, 150);
 
+  // Keep the box in step with the address bar (e.g. after "See all results" or Back).
+  useEffect(() => {
+    setQuery(urlQuery);
+  }, [urlQuery]);
+
   const results = useMemo(() => {
     const q = debounced.trim().toLowerCase();
     if (q.length < 1) return null;
-    const prods = products.filter((p) => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)).slice(0, 5);
+    const prods = products.filter((p) => matchesQuery(p, q)).slice(0, 5);
     const cats = categories.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 3);
-    const brands = [...new Set(products.map((p) => p.brand))].filter((b) => b.toLowerCase().includes(q)).slice(0, 3);
+    const brands = [...new Set(products.map((p) => p.brand).filter(Boolean))].filter((b) => b.toLowerCase().includes(q)).slice(0, 3);
     return { prods, cats, brands };
   }, [debounced, products, categories]);
 
@@ -38,6 +47,17 @@ export default function ProductSearch({ autoFocus = false, onNavigate, className
     setQuery('');
     navigate(path);
     onNavigate?.();
+  };
+
+  /** Clearing the box on the shop page removes ?q= so every product is listed again. */
+  const clearSearch = () => {
+    setQuery('');
+    if (urlQuery) {
+      const next = new URLSearchParams(params);
+      next.delete('q');
+      const search = next.toString();
+      navigate({ pathname: '/shop', search: search ? `?${search}` : '' });
+    }
   };
 
   const submit = (e) => {
@@ -57,14 +77,18 @@ export default function ProductSearch({ autoFocus = false, onNavigate, className
           type="search"
           value={query}
           autoFocus={autoFocus}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+            if (!e.target.value.trim()) clearSearch();
+          }}
           onFocus={() => setOpen(true)}
           placeholder="Search groceries, brands, categories…"
           className="w-full rounded-full border border-ink/10 bg-surface py-3 pl-11 pr-10 text-sm shadow-sm placeholder:text-ink/40 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
           autoComplete="off"
         />
         {query && (
-          <button type="button" onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-ink/40 hover:bg-ink/5" aria-label="Clear search">
+          <button type="button" onClick={clearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-ink/40 hover:bg-ink/5" aria-label="Clear search">
             <X className="h-4 w-4" />
           </button>
         )}

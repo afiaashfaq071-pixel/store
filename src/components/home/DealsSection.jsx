@@ -1,10 +1,8 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Flame } from 'lucide-react';
+import { BadgePercent, Flame } from 'lucide-react';
 import useProducts from '../../hooks/useProducts.js';
 import ProductGrid from '../products/ProductGrid.jsx';
-import SectionHeading from '../common/SectionHeading.jsx';
-import { BadgePercent } from 'lucide-react';
 import { getDiscountPercent } from '../../data/products.js';
 
 export default function DealsSection() {
@@ -13,6 +11,7 @@ export default function DealsSection() {
     () => products.filter((p) => p.originalPrice && p.stock > 0).sort((a, b) => getDiscountPercent(b) - getDiscountPercent(a)).slice(0, 4),
     [products]
   );
+  if (deals.length === 0) return null;
   return (
     <section className="bg-charcoal py-14 text-white">
       <div className="container-page">

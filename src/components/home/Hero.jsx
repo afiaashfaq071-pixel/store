@@ -23,7 +23,7 @@ export default function Hero() {
             <Sparkles className="h-4 w-4" /> Pakistan's all-in-one supermart
           </span>
           <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] sm:text-5xl xl:text-6xl">
-            Everything You Need, <span className="whitespace-nowrap text-brand">All in One Place!</span>
+            Everything You Need, <span className="text-brand sm:whitespace-nowrap">All in One Place!</span>
           </h1>
           <p className="mt-5 max-w-lg text-base leading-relaxed text-ink/70 sm:text-lg">
             From daily groceries and snacks to beauty, sports, stationery and home essentials — shop smart prices, trusted brands and convenient delivery, all under one roof.

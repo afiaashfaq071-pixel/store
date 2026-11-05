@@ -34,7 +34,6 @@ export default function Footer() {
             <li><Link to="/shop?deals=1" className="hover:text-brand">Deals & Offers</Link></li>
             <li><Link to="/shop?best=1" className="hover:text-brand">Best Sellers</Link></li>
             <li><Link to="/wishlist" className="hover:text-brand">My Wishlist</Link></li>
-            <li><Link to="/admin" className="hover:text-brand">Admin Dashboard (demo)</Link></li>
           </ul>
         </div>
 
@@ -50,7 +49,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs text-white/50">
-        <p>© {new Date().getFullYear()} ALI HASSAN SUPERMART — Everything You Need Under One Roof. Demo storefront: sample products, no real orders are processed.</p>
+        <p>© {new Date().getFullYear()} ALI HASSAN SUPERMART — Everything You Need Under One Roof.</p>
       </div>
     </footer>
   );

@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { BarChart3, Boxes, LayoutDashboard, Layers, Menu, Package, Percent, ShoppingBag, Store, Users, X } from 'lucide-react';
+import { BarChart3, Boxes, HeartHandshake, LayoutDashboard, Layers, Lock, Menu, Package, Percent, Phone, ShoppingBag, Store, Users, X } from 'lucide-react';
 import Logo from '../common/Logo.jsx';
+import { AdminLockContext } from './AdminGate.jsx';
+import useProducts from '../../hooks/useProducts.js';
+import useOrders from '../../hooks/useOrders.js';
+import { isSupabaseEnabled } from '../../lib/supabase.js';
 
 const nav = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -12,11 +16,22 @@ const nav = [
   { to: '/admin/sales', label: 'Sales', icon: BarChart3 },
   { to: '/admin/customers', label: 'Customers', icon: Users },
   { to: '/admin/discounts', label: 'Discounts', icon: Percent },
+  { to: '/admin/follow-ups', label: 'Follow-ups', icon: HeartHandshake },
+  { to: '/admin/settings', label: 'Owner contact', icon: Phone },
 ];
 
-/** Separate admin shell (no storefront navbar). Demo only — there is no authentication. */
+/** Separate admin shell (no storefront navbar). Opened only through AdminGate (owner key). */
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
+  const { lock } = useContext(AdminLockContext);
+  const { refreshProducts } = useProducts();
+  const { refreshOrders } = useOrders();
+
+  // With the database on, pull the latest products and orders whenever the admin opens.
+  useEffect(() => {
+    refreshProducts();
+    refreshOrders();
+  }, [refreshProducts, refreshOrders]);
 
   const sidebar = (
     <div className="flex h-full flex-col bg-charcoal p-5 text-white">
@@ -24,7 +39,7 @@ export default function AdminLayout() {
         <Logo to="/admin" />
         <button className="rounded-full p-1.5 hover:bg-white/10 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu"><X className="h-5 w-5" /></button>
       </div>
-      <nav className="flex-1 space-y-1" aria-label="Admin">
+      <nav className="flex-1 space-y-1 overflow-y-auto" aria-label="Admin">
         {nav.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -38,6 +53,7 @@ export default function AdminLayout() {
         ))}
       </nav>
       <Link to="/" className="mt-6 flex items-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold hover:bg-white/10"><Store className="h-4 w-4" />Back to store</Link>
+      <button onClick={lock} className="mt-2 flex items-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold hover:bg-white/10"><Lock className="h-4 w-4" />Lock admin</button>
     </div>
   );
 
@@ -56,7 +72,7 @@ export default function AdminLayout() {
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-ink/10 bg-surface/90 px-4 py-3 backdrop-blur lg:px-8">
           <button className="rounded-full p-2 hover:bg-ink/5 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="h-6 w-6" /></button>
           <h1 className="text-lg font-extrabold">Admin Dashboard</h1>
-          <span className="ml-auto rounded-full bg-gold/30 px-3 py-1 text-[11px] font-bold">DEMO · data stored in this browser only</span>
+          <span className="ml-auto rounded-full bg-gold/30 px-3 py-1 text-[11px] font-bold">{isSupabaseEnabled ? 'Owner area' : 'DEMO · data saved in this browser only'}</span>
         </header>
         <main className="p-4 lg:p-8"><Outlet /></main>
       </div>

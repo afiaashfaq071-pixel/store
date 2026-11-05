@@ -17,6 +17,7 @@ export default function CartItem({ item, onNavigate }) {
           <div className="min-w-0">
             <Link to={`/product/${item.id}`} onClick={onNavigate} className="line-clamp-2 text-sm font-semibold leading-snug hover:text-brand">{item.name}</Link>
             <p className="text-xs text-ink/50">{item.brand} · {formatPKR(item.price)}</p>
+            {item.qty >= item.stock && <p className="text-[11px] font-semibold text-gold">Only {item.stock} available</p>}
           </div>
           <button onClick={() => removeFromCart(item.id)} className="rounded-full p-1.5 text-ink/40 hover:bg-red-500/10 hover:text-red-500" aria-label={`Remove ${item.name}`}>
             <Trash2 className="h-4 w-4" />

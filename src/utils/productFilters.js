@@ -19,10 +19,15 @@ export const defaultFilters = {
   sort: 'popular',
 };
 
+/**
+ * Partial, case-insensitive search. Every word typed must appear somewhere in the product name,
+ * brand or category, so "tea leav" and "leaves tea" both find "Premium Tea Leaves".
+ */
 export function matchesQuery(product, query, categoryName = '') {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  return [product.name, product.brand, categoryName].some((s) => (s || '').toLowerCase().includes(q));
+  const words = String(query || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return true;
+  const haystack = [product.name, product.brand, categoryName].map((s) => String(s || '').toLowerCase()).join(' ');
+  return words.every((w) => haystack.includes(w));
 }
 
 export function filterProducts(products, filters, categories = []) {

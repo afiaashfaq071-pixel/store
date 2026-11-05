@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Info, Wallet } from 'lucide-react';
+import { CheckCircle2, MessageCircle, Wallet } from 'lucide-react';
 import useCart from '../hooks/useCart.js';
 import useOrders from '../hooks/useOrders.js';
+import useSettings from '../hooks/useSettings.js';
 import CartSummary from '../components/cart/CartSummary.jsx';
 import EmptyCart from '../components/cart/EmptyCart.jsx';
+import StockNotice from '../components/cart/StockNotice.jsx';
 import Button from '../components/common/Button.jsx';
 import StateIllustration from '../components/common/StateIllustration.jsx';
 import ProductImage from '../components/common/ProductImage.jsx';
 import { formatPKR } from '../utils/format.js';
+import { isSupabaseEnabled } from '../lib/supabase.js';
+import { buildOrderMessage, whatsappLink } from '../utils/notify.js';
 
 const cities = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Multan', 'Peshawar', 'Quetta', 'Sialkot', 'Gujranwala', 'Hyderabad', 'Other'];
 const phoneRe = /^(\+92|0)?3\d{2}[- ]?\d{7}$/;
@@ -16,9 +20,11 @@ const phoneRe = /^(\+92|0)?3\d{2}[- ]?\d{7}$/;
 export default function Checkout() {
   const cart = useCart();
   const { placeOrder } = useOrders();
+  const { ownerContact } = useSettings();
   const [form, setForm] = useState({ name: '', phone: '', address: '', city: 'Lahore', notes: '' });
   const [errors, setErrors] = useState({});
   const [order, setOrder] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -32,22 +38,36 @@ export default function Checkout() {
     return Object.keys(e).length === 0;
   };
 
-  const submit = (ev) => {
+  const submit = async (ev) => {
     ev.preventDefault();
-    if (!validate()) return;
-    const record = placeOrder({
-      customer: { name: form.name.trim(), phone: form.phone.trim(), city: form.city, address: form.address.trim(), notes: form.notes.trim() },
-      items: cart.items.map((i) => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, emoji: i.emoji, tint: i.tint })),
-      subtotal: cart.subtotal,
-      discount: cart.discount,
-      deliveryFee: cart.deliveryFee,
-      total: cart.total,
-      coupon: cart.coupon?.code || null,
-      payment: 'Cash on Delivery',
-    });
-    cart.clearCart();
-    setOrder(record);
-    window.scrollTo({ top: 0 });
+    if (submitting || !validate()) return;
+    if (cart.unavailable.length > 0) {
+      setErrors({ form: 'Please remove the unavailable items from your cart before ordering.' });
+      return;
+    }
+    if (cart.items.length === 0) return;
+    setSubmitting(true);
+    try {
+      const record = await placeOrder({
+        customer: { name: form.name.trim(), phone: form.phone.trim(), city: form.city, address: form.address.trim(), notes: form.notes.trim() },
+        items: cart.items.map((i) => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, emoji: i.emoji, tint: i.tint })),
+        subtotal: cart.subtotal,
+        discount: cart.discount,
+        deliveryFee: cart.deliveryFee,
+        total: cart.total,
+        coupon: cart.coupon?.code || null,
+        payment: 'Cash on Delivery',
+      });
+      cart.clearCart();
+      setOrder(record);
+      window.scrollTo({ top: 0 });
+    } catch (err) {
+      // The cart is left untouched so the customer can simply try again.
+      const offline = err instanceof TypeError;
+      setErrors({ form: offline ? 'No internet connection. Your cart is safe — please try again.' : `We could not place your order: ${err.message || 'unknown error'}. Your cart is safe.` });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   /* ---------- Confirmation screen ---------- */
@@ -71,14 +91,21 @@ export default function Checkout() {
             <div className="mt-3 flex justify-between border-t border-dashed border-ink/20 pt-3 text-base font-extrabold"><span>Total (Cash on Delivery)</span><span className="text-brand">{formatPKR(order.total)}</span></div>
           </div>
 
-          <p className="mt-5 flex items-start gap-2 rounded-xl bg-gold/20 p-3 text-left text-xs text-ink/70">
-            <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            This is a demo storefront. The order is saved only in this browser (visible in the Admin Dashboard) — no real order, payment or delivery is processed.
-          </p>
+          <p className="mt-5 text-sm text-ink/60">Pay in cash when your order arrives. We will contact you on {order.customer.phone} if we need anything.</p>
+          {ownerContact.phone ? (
+            <p className="mt-2 text-xs text-ink/50">The WhatsApp button opens WhatsApp with your order message already written — nothing is sent until you press send there.</p>
+          ) : (
+            <p className="mt-2 text-xs text-ink/50">This store has not set a WhatsApp number yet, so no WhatsApp message is available for this order.</p>
+          )}
+          {!isSupabaseEnabled && <p className="mt-3 rounded-xl bg-gold/20 p-3 text-xs text-ink/70">Demo store: this order is saved only in this browser. It is not sent to a real shop and no payment or delivery takes place.</p>}
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button to="/shop">Continue Shopping</Button>
-            <Button to="/admin/orders" variant="outline">View in Admin</Button>
+            {ownerContact.phone && (
+              <a href={whatsappLink(ownerContact.phone, buildOrderMessage(order))} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-success px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-success-dark">
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />Send order on WhatsApp
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -88,6 +115,7 @@ export default function Checkout() {
   if (cart.items.length === 0) {
     return (
       <div className="container-page py-10">
+        <div className="mx-auto max-w-lg"><StockNotice /></div>
         <div className="mx-auto max-w-lg rounded-3xl bg-surface shadow-soft"><EmptyCart title="Nothing to check out yet" text="Add a few items to your cart first." /></div>
       </div>
     );
@@ -99,6 +127,7 @@ export default function Checkout() {
   return (
     <div className="container-page py-8">
       <h1 className="mb-6 text-3xl font-extrabold">Checkout</h1>
+      <StockNotice />
       <form onSubmit={submit} noValidate className="grid items-start gap-8 lg:grid-cols-[1fr_400px]">
         <div className="space-y-6">
           <section className="rounded-3xl bg-surface p-6 shadow-soft">
@@ -160,7 +189,8 @@ export default function Checkout() {
             ))}
           </ul>
           <CartSummary />
-          <Button type="submit" size="lg" className="mt-5 w-full">Place Order · {formatPKR(cart.total)}</Button>
+          {errors.form && <p className="mt-4 text-sm text-red-500" role="alert">{errors.form}</p>}
+          <Button type="submit" size="lg" className="mt-5 w-full" disabled={submitting}>{submitting ? 'Placing order…' : `Place Order · ${formatPKR(cart.total)}`}</Button>
           <Link to="/cart" className="mt-3 block text-center text-sm font-semibold text-brand hover:underline">← Edit cart</Link>
         </aside>
       </form>

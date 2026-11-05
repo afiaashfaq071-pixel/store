@@ -55,7 +55,7 @@ function ProductCard({ product }) {
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col p-4">
+        <div className="flex flex-1 flex-col p-3 sm:p-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-brand">{product.brand}</p>
           <Link to={`/product/${product.id}`} className="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug hover:text-brand">
             {product.name}
@@ -72,7 +72,7 @@ function ProductCard({ product }) {
             {qty > 0 ? (
               <div className="flex items-center justify-between rounded-full bg-brand/10 p-1">
                 <QuantityControl size="sm" value={qty} max={product.stock} onChange={(q) => updateQty(product.id, q)} />
-                <span className="pr-3 text-xs font-bold text-brand">In cart</span>
+                <span className="hidden pr-3 text-xs font-bold text-brand sm:inline">In cart</span>
               </div>
             ) : (
               <button

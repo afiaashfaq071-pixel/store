@@ -4,6 +4,7 @@ import useCart from '../hooks/useCart.js';
 import CartItem from '../components/cart/CartItem.jsx';
 import CartSummary from '../components/cart/CartSummary.jsx';
 import EmptyCart from '../components/cart/EmptyCart.jsx';
+import StockNotice from '../components/cart/StockNotice.jsx';
 import Button from '../components/common/Button.jsx';
 
 export default function Cart() {
@@ -13,6 +14,7 @@ export default function Cart() {
   return (
     <div className="container-page py-8">
       <h1 className="mb-6 text-3xl font-extrabold">Shopping Cart {count > 0 && <span className="text-lg font-semibold text-ink/40">({count} items)</span>}</h1>
+      <StockNotice />
       {items.length === 0 ? (
         <div className="rounded-3xl bg-surface shadow-soft"><EmptyCart /></div>
       ) : (

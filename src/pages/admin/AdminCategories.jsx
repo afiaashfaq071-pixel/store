@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isSupabaseEnabled } from '../../lib/supabase.js';
 import { Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import useProducts from '../../hooks/useProducts.js';
 import { useToast } from '../../context/ToastContext.jsx';
@@ -8,11 +9,12 @@ import Button from '../../components/common/Button.jsx';
 const slugify = (s) => s.toLowerCase().trim().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export default function AdminCategories() {
-  const { categories, products, addCategory, updateCategory, deleteCategory, resetCatalog } = useProducts();
+  const { categories, categoriesLoading, products, addCategory, updateCategory, deleteCategory, resetCatalog } = useProducts();
   const { showToast } = useToast();
   const [editing, setEditing] = useState(null); // null | 'new' | category
   const [form, setForm] = useState({ name: '', emoji: '📦', blurb: '' });
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const open = (c) => {
     setError('');
@@ -20,31 +22,46 @@ export default function AdminCategories() {
     setEditing(c);
   };
 
-  const save = (e) => {
+  const save = async (e) => {
     e.preventDefault();
+    if (busy) return;
     const name = form.name.trim();
-    if (!name) return setError('Category name is required.');
-    if (editing === 'new') {
-      const slug = slugify(name);
-      if (!slug || categories.some((c) => c.slug === slug)) return setError('A category with this name already exists.');
-      addCategory({ slug, name, short: name.split(/[ &]/)[0], emoji: form.emoji || '📦', blurb: form.blurb });
-      showToast('Category added');
-    } else {
-      updateCategory(editing.slug, { name, emoji: form.emoji || '📦', blurb: form.blurb });
-      showToast('Category updated');
+    if (name.length < 2) return setError('Category name is required (at least 2 letters).');
+    const sameName = (c) => c.name.trim().toLowerCase() === name.toLowerCase() && c !== editing;
+    if (categories.some(sameName)) return setError('A category with this name already exists.');
+    setBusy(true);
+    try {
+      if (editing === 'new') {
+        const slug = slugify(name);
+        if (!slug || categories.some((c) => c.slug === slug)) throw new Error('A category with this name already exists.');
+        await addCategory({ slug, name, short: name.split(/[ &]/)[0], emoji: form.emoji || '📦', blurb: form.blurb });
+        showToast('Category added');
+      } else {
+        await updateCategory(editing.slug, { name, emoji: form.emoji || '📦', blurb: form.blurb });
+        showToast('Category updated');
+      }
+      setEditing(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
     }
-    setEditing(null);
   };
 
-  const remove = (c) => {
+  const remove = async (c) => {
     const n = products.filter((p) => p.category === c.slug).length;
     if (n > 0) return showToast(`Move or delete the ${n} product(s) in "${c.short || c.name}" first`, 'error');
-    deleteCategory(c.slug);
-    showToast('Category deleted', 'info');
+    if (!window.confirm(`Delete the category "${c.name}"?`)) return;
+    try {
+      await deleteCategory(c.slug);
+      showToast('Category deleted', 'info');
+    } catch (err) {
+      showToast(`Could not delete the category: ${err.message}`, 'error');
+    }
   };
 
   const reset = () => {
-    if (window.confirm('Reset products, categories and coupons to the original demo data?')) {
+    if (window.confirm('Reset the sample products, categories and coupons to the original demo data?')) {
       resetCatalog();
       showToast('Catalogue reset to demo data', 'info');
     }
@@ -53,9 +70,11 @@ export default function AdminCategories() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap justify-between gap-3">
-        <Button variant="outline" icon={RotateCcw} onClick={reset}>Reset demo data</Button>
+        {isSupabaseEnabled ? <span /> : <Button variant="outline" icon={RotateCcw} onClick={reset}>Reset demo data</Button>}
         <Button icon={Plus} onClick={() => open('new')}>Add category</Button>
       </div>
+      {categoriesLoading && <p className="text-sm text-ink/60" role="status">Loading categories…</p>}
+      {!categoriesLoading && categories.length === 0 && <p className="rounded-2xl bg-surface p-8 text-center text-sm text-ink/50 shadow-soft">No categories yet. Add your first one.</p>}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {categories.map((c) => (
           <div key={c.slug} className={`flex items-center gap-4 rounded-2xl bg-gradient-to-br p-5 shadow-soft ${c.tint}`}>
@@ -76,7 +95,7 @@ export default function AdminCategories() {
           <div><label htmlFor="cat-emoji" className="mb-1 block text-sm font-semibold">Emoji</label><input id="cat-emoji" maxLength={4} className="input-field" value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></div>
           <div><label htmlFor="cat-blurb" className="mb-1 block text-sm font-semibold">Description</label><textarea id="cat-blurb" rows={2} className="input-field" value={form.blurb} onChange={(e) => setForm({ ...form, blurb: e.target.value })} /></div>
           {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
-          <div className="flex justify-end gap-3"><Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button><Button type="submit">Save</Button></div>
+          <div className="flex justify-end gap-3"><Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button><Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save'}</Button></div>
         </form>
       </Modal>
     </div>

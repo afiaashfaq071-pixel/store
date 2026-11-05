@@ -20,7 +20,7 @@ export function LogoIcon({ className = 'h-11 w-11' }) {
  * variant: "horizontal" (icon + wordmark) | "icon" (compact mark only) | "stacked"
  * The UI is dark, so the wordmark is light by default.
  */
-export default function Logo({ variant = 'horizontal', to = '/', className = '', showTagline = false }) {
+export default function Logo({ variant = 'horizontal', to = '/', className = '', showTagline = false, responsiveText = false }) {
   const content =
     variant === 'icon' ? (
       <LogoIcon className="h-10 w-10" />
@@ -35,7 +35,7 @@ export default function Logo({ variant = 'horizontal', to = '/', className = '',
     ) : (
       <div className="flex items-center gap-3">
         <LogoIcon className="h-11 w-11 shrink-0" />
-        <div className="leading-none">
+        <div className={`leading-none ${responsiveText ? 'hidden min-[400px]:block' : ''}`}>
           <p className="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">ALI HASSAN</p>
           <p className="mt-1 font-display text-[10px] font-semibold tracking-[0.38em] text-brand sm:text-[11px]">SUPERMART</p>
           {showTagline && <p className="mt-1 text-[10px] text-ink/60">Everything You Need Under One Roof.</p>}

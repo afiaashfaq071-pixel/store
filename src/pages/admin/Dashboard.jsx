@@ -1,30 +1,44 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Banknote, Package, ShoppingBag, Users } from 'lucide-react';
+import { AlertTriangle, Banknote, CheckCircle2, Clock, Package, ShoppingBag } from 'lucide-react';
 import StatCard from '../../components/admin/StatCard.jsx';
 import BarChart from '../../components/admin/BarChart.jsx';
 import Badge from '../../components/common/Badge.jsx';
+import Button from '../../components/common/Button.jsx';
+import Loader from '../../components/common/Loader.jsx';
 import useOrders from '../../hooks/useOrders.js';
 import useProducts from '../../hooks/useProducts.js';
 import { formatPKR } from '../../utils/format.js';
 import { lastNDaysRevenue, statusTone } from '../../utils/adminStats.js';
+import { isSupabaseEnabled } from '../../lib/supabase.js';
 
 export default function Dashboard() {
-  const { orders, customers } = useOrders();
+  const { orders, customers, loading, error, refreshOrders } = useOrders();
   const { products } = useProducts();
 
   const revenue = useMemo(() => orders.filter((o) => o.status !== 'Cancelled').reduce((s, o) => s + o.total, 0), [orders]);
-  const pending = orders.filter((o) => o.status === 'Pending' || o.status === 'Processing').length;
+  const pending = orders.filter((o) => o.status === 'Pending').length;
+  const completed = orders.filter((o) => o.status === 'Delivered').length;
   const lowStock = products.filter((p) => p.stock <= 10);
+  const totalUnits = products.reduce((sum, p) => sum + p.stock, 0);
   const chart = useMemo(() => lastNDaysRevenue(orders, 7), [orders]);
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Banknote} label="Revenue" value={formatPKR(revenue)} hint="Excludes cancelled orders" />
-        <StatCard icon={ShoppingBag} label="Orders" value={orders.length} hint={`${pending} awaiting action`} tone="bg-sky-500/15 text-sky-300" />
-        <StatCard icon={Package} label="Products" value={products.length} hint={`${lowStock.length} low / out of stock`} tone="bg-success/15 text-success-dark" />
-        <StatCard icon={Users} label="Customers" value={customers.length} tone="bg-violet-500/15 text-violet-300" />
+      {error && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm" role="alert">
+          <span className="flex-1 text-red-400">{error}</span>
+          <Button size="sm" variant="outline" onClick={refreshOrders}>Try again</Button>
+        </div>
+      )}
+      {loading && orders.length === 0 && <Loader label="Loading dashboard…" />}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard icon={Banknote} label={isSupabaseEnabled ? 'Total sales' : 'Total demo sales'} value={formatPKR(revenue)} hint="All orders except cancelled" />
+        <StatCard icon={ShoppingBag} label="Total orders" value={orders.length} hint={`${customers.length} customer${customers.length === 1 ? '' : 's'}`} tone="bg-sky-500/15 text-sky-300" />
+        <StatCard icon={Clock} label="Pending orders" value={pending} hint="Waiting to be confirmed" tone="bg-gold/20 text-gold" />
+        <StatCard icon={CheckCircle2} label="Completed orders" value={completed} hint="Delivered" tone="bg-success/15 text-success-dark" />
+        <StatCard icon={Package} label="Total products" value={products.length} hint={`${totalUnits.toLocaleString('en-PK')} units in stock`} tone="bg-violet-500/15 text-violet-300" />
+        <StatCard icon={AlertTriangle} label="Low-stock products" value={lowStock.length} hint="10 or fewer left (including out of stock)" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">

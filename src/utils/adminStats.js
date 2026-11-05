@@ -1,6 +1,6 @@
 // Helpers that turn raw orders into dashboard numbers.
 export const statusTone = (status) =>
-  ({ Pending: 'gold', Processing: 'info', Shipped: 'dark', Delivered: 'success', Cancelled: 'danger' }[status] || 'neutral');
+  ({ Pending: 'gold', Confirmed: 'info', Processing: 'dark', 'Out for Delivery': 'brand', Delivered: 'success', Cancelled: 'danger' }[status] || 'neutral');
 
 const DAY = 86400000;
 

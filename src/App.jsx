@@ -4,9 +4,11 @@ import { ProductProvider } from './context/ProductContext.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 import { WishlistProvider } from './context/WishlistContext.jsx';
 import { OrderProvider } from './context/OrderContext.jsx';
+import { SettingsProvider } from './context/SettingsContext.jsx';
 
 import PageLayout from './components/layout/PageLayout.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
+import AdminGate from './components/admin/AdminGate.jsx';
 
 import Home from './pages/Home.jsx';
 import Shop from './pages/Shop.jsx';
@@ -28,6 +30,8 @@ import AdminOrders from './pages/admin/AdminOrders.jsx';
 import AdminSales from './pages/admin/AdminSales.jsx';
 import AdminCustomers from './pages/admin/AdminCustomers.jsx';
 import AdminDiscounts from './pages/admin/AdminDiscounts.jsx';
+import AdminSettings from './pages/admin/AdminSettings.jsx';
+import AdminFollowUps from './pages/admin/AdminFollowUps.jsx';
 
 /** App-level providers and routing only. */
 export default function App() {
@@ -35,6 +39,7 @@ export default function App() {
     <BrowserRouter>
       <ToastProvider>
         <ProductProvider>
+          <SettingsProvider>
           <OrderProvider>
             <CartProvider>
               <WishlistProvider>
@@ -53,7 +58,7 @@ export default function App() {
                     <Route path="*" element={<NotFound />} />
                   </Route>
 
-                  <Route path="/admin" element={<AdminLayout />}>
+                  <Route path="/admin" element={<AdminGate><AdminLayout /></AdminGate>}>
                     <Route index element={<Dashboard />} />
                     <Route path="products" element={<AdminProducts />} />
                     <Route path="categories" element={<AdminCategories />} />
@@ -62,11 +67,14 @@ export default function App() {
                     <Route path="sales" element={<AdminSales />} />
                     <Route path="customers" element={<AdminCustomers />} />
                     <Route path="discounts" element={<AdminDiscounts />} />
+                    <Route path="follow-ups" element={<AdminFollowUps />} />
+                    <Route path="settings" element={<AdminSettings />} />
                   </Route>
                 </Routes>
               </WishlistProvider>
             </CartProvider>
           </OrderProvider>
+          </SettingsProvider>
         </ProductProvider>
       </ToastProvider>
     </BrowserRouter>

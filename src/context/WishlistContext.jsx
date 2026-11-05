@@ -3,6 +3,7 @@ import { ProductContext } from './ProductContext.jsx';
 import { CartContext } from './CartContext.jsx';
 import { useToast } from './ToastContext.jsx';
 import { loadFromStorage, saveToStorage } from '../utils/storage.js';
+import { sanitizeIds } from '../utils/storedData.js';
 
 export const WishlistContext = createContext(null);
 
@@ -12,10 +13,11 @@ export function WishlistProvider({ children }) {
   const { products } = useContext(ProductContext);
   const { addToCart } = useContext(CartContext);
   const { showToast } = useToast();
-  const [ids, setIds] = useState(() => loadFromStorage(KEY, []));
+  const [ids, setIds] = useState(() => sanitizeIds(loadFromStorage(KEY, [])));
 
-  useEffect(() => saveToStorage(KEY, ids), [ids]);
-
+  useEffect(() => {
+    saveToStorage(KEY, ids);
+  }, [ids]);
   const items = useMemo(() => ids.map((id) => products.find((p) => p.id === id)).filter(Boolean), [ids, products]);
 
   const isInWishlist = useCallback((id) => ids.includes(id), [ids]);

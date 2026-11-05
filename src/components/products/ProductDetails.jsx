@@ -97,7 +97,7 @@ export default function ProductDetails({ product }) {
                 <li>Brand: {product.brand}</li>
                 <li>Pack size: {product.unit}</li>
                 <li>Category: {category?.name}</li>
-                <li>Store sample product — images are illustrative.</li>
+                {product.sample && <li>Sample product — images are illustrative.</li>}
               </ul>
             </div>
           ) : (

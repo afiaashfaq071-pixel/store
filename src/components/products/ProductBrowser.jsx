@@ -39,7 +39,7 @@ export default function ProductBrowser({ baseProducts, initialFilters = {}, show
             </select>
           </div>
         </div>
-        <ProductGrid products={results} columns="grid-cols-2 md:grid-cols-3" emptyMessage={emptyMessage} />
+        <ProductGrid products={results} columns="grid-cols-2 md:grid-cols-3" emptyMessage={baseProducts.length === 0 ? 'Products coming soon.' : emptyMessage} hint={baseProducts.length === 0 ? 'New items are being added — please check back soon.' : undefined} />
       </div>
 
       {panelOpen && (

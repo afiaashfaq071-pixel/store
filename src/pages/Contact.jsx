@@ -2,27 +2,47 @@ import { useState } from 'react';
 import { Clock, Mail, MapPin, Phone } from 'lucide-react';
 import Button from '../components/common/Button.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-
-const info = [
-  { icon: MapPin, title: 'Visit us', text: 'Main Boulevard, Lahore, Pakistan' },
-  { icon: Phone, title: 'Call us', text: '+92 300 0000000' },
-  { icon: Mail, title: 'Email', text: 'hello@alihassansupermart.pk' },
-  { icon: Clock, title: 'Opening hours', text: 'Daily, 9:00 AM – 11:00 PM' },
-];
+import useSettings from '../hooks/useSettings.js';
+import { sendEmail } from '../utils/notify.js';
 
 export default function Contact() {
   const { showToast } = useToast();
+  const { ownerContact } = useSettings();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [sending, setSending] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const submit = (e) => {
+  // Messages are delivered to the store email set in Admin → Settings. Without it nothing can be sent.
+  const canSend = Boolean(ownerContact.email);
+  const info = [
+    { icon: MapPin, title: 'Visit us', text: 'Main Boulevard, Lahore, Pakistan (sample address)' },
+    { icon: Phone, title: 'Call us', text: ownerContact.phone || '+92 300 0000000 (sample number)' },
+    { icon: Mail, title: 'Email', text: ownerContact.email || 'hello@alihassansupermart.pk (sample address)' },
+    { icon: Clock, title: 'Opening hours', text: 'Daily, 9:00 AM – 11:00 PM' },
+  ];
+
+  const submit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !/^\S+@\S+\.\S+$/.test(form.email) || form.message.trim().length < 5) {
+    if (sending) return;
+    if (!canSend) {
+      showToast('Message sending is unavailable: the store has no email set up yet.', 'error');
+      return;
+    }
+    if (!form.name.trim() || !/^\S+@\S+\.\S+$/.test(form.email.trim()) || form.message.trim().length < 5) {
       showToast('Please complete all fields with a valid email', 'error');
       return;
     }
-    setForm({ name: '', email: '', message: '' });
-    showToast('Thanks! (Demo form — your message was not actually sent)', 'info');
+    setSending(true);
+    try {
+      await sendEmail(ownerContact.email, `Website message from ${form.name.trim()}`, `From: ${form.name.trim()} <${form.email.trim()}>\n\n${form.message.trim()}`);
+      setForm({ name: '', email: '', message: '' });
+      showToast('Message sent. We will reply by email.', 'success');
+    } catch (err) {
+      // The text stays in the form so nothing the customer typed is lost.
+      showToast(`Your message could not be sent (${err.message}). Please try again.`, 'error');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -53,8 +73,8 @@ export default function Contact() {
             <label htmlFor="c-msg" className="mb-1.5 block text-sm font-semibold">Message</label>
             <textarea id="c-msg" rows={5} className="input-field" value={form.message} onChange={set('message')} />
           </div>
-          <Button type="submit" size="lg">Send Message</Button>
-          <p className="text-xs text-ink/40">Demo form: no backend is connected, so messages are not delivered.</p>
+          <Button type="submit" size="lg" disabled={sending || !canSend}>{sending ? 'Sending…' : 'Send Message'}</Button>
+          {!canSend && <p className="text-sm text-red-500" role="status">Message sending is unavailable right now because the store has not set an email address. Please call or visit us instead.</p>}
         </form>
       </div>
     </div>

@@ -49,18 +49,18 @@ export default function Navbar() {
 
   return (
     <header className={`sticky top-0 z-40 transition-all duration-300 ${scrolled ? 'bg-surface/90 shadow-soft backdrop-blur-lg' : 'bg-cream'}`}>
-      <div className={`container-page flex items-center gap-3 transition-all duration-300 ${scrolled ? 'py-2' : 'py-4'}`}>
+      <div className={`container-page relative flex items-center gap-3 transition-all duration-300 ${scrolled ? 'py-2' : 'py-4'}`}>
         <button className="rounded-full p-2 hover:bg-ink/5 lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">
           <Menu className="h-6 w-6" />
         </button>
 
-        <Logo className="shrink-0" />
+        <Logo className="shrink-0" responsiveText />
 
         {/* Desktop nav */}
         <nav className="ml-4 hidden items-center gap-1 lg:flex" aria-label="Main">
           <NavLink to="/" end className={({ isActive: a }) => `${linkBase} ${a ? 'bg-brand text-white' : 'hover:bg-ink/5'}`}>Home</NavLink>
 
-          <div className="relative" onMouseEnter={() => setMegaOpen(true)} onMouseLeave={() => setMegaOpen(false)}>
+          <div onMouseEnter={() => setMegaOpen(true)} onMouseLeave={() => setMegaOpen(false)}>
             <button
               className={`${linkBase} inline-flex items-center gap-1 ${megaOpen ? 'bg-ink/5' : 'hover:bg-ink/5'}`}
               aria-expanded={megaOpen}
@@ -70,7 +70,7 @@ export default function Navbar() {
               All Categories <ChevronDown className={`h-4 w-4 transition-transform ${megaOpen ? 'rotate-180' : ''}`} />
             </button>
             {megaOpen && (
-              <div className="absolute left-0 top-full w-[760px] pt-3">
+              <div className="absolute left-4 top-full w-[min(760px,calc(100%-2rem))] pt-3 sm:left-6 lg:left-8">
                 <div className="grid grid-cols-3 gap-1 rounded-3xl border border-ink/5 bg-surface p-4 shadow-lift">
                   {categories.map((c) => (
                     <Link key={c.slug} to={`/category/${c.slug}`} className="flex items-center gap-3 rounded-2xl p-3 transition hover:bg-cream">
@@ -118,7 +118,7 @@ export default function Navbar() {
             <Heart className="h-5 w-5" />
             {wishCount > 0 && <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">{wishCount}</span>}
           </Link>
-          <button onClick={openCart} className="relative flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark" aria-label={`Open cart, ${count} items`}>
+          <button onClick={openCart} className="relative flex items-center gap-2 rounded-full bg-brand px-3 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark sm:px-4" aria-label={`Open cart, ${count} items`}>
             <ShoppingCart className="h-5 w-5" />
             <span className="hidden sm:inline">Cart</span>
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-bold text-charcoal" data-testid="cart-count">{count}</span>
@@ -155,7 +155,6 @@ export default function Navbar() {
                 </Link>
               ))}
             </div>
-            <Link to="/admin" className="mt-6 rounded-xl border border-dashed border-ink/20 px-4 py-3 text-center text-sm font-semibold text-ink/60">Admin Dashboard (demo)</Link>
           </aside>
         </div>
       )}

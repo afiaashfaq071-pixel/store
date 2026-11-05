@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Minus, Plus } from 'lucide-react';
 import useProducts from '../../hooks/useProducts.js';
 import Badge from '../../components/common/Badge.jsx';
 
-const FILTERS = [['all', 'All'], ['low', 'Low (≤10)'], ['out', 'Out of stock']];
+const FILTERS = [['mine', 'My items'], ['all', 'All (with samples)'], ['low', 'Low (≤10)'], ['out', 'Out of stock']];
 
-/** Quick stock adjustments without opening the full product form. */
+/** Quick stock adjustments. By default only items the owner added are listed; samples are under "All". */
 export default function AdminStock() {
   const { products, updateProduct } = useProducts();
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('mine');
 
   const list = useMemo(
-    () => products.filter((p) => (filter === 'out' ? p.stock === 0 : filter === 'low' ? p.stock <= 10 : true)).sort((a, b) => a.stock - b.stock),
+    () => products.filter((p) => (filter === 'out' ? p.stock === 0 : filter === 'low' ? p.stock <= 10 : filter === 'mine' ? !p.sample : true)).sort((a, b) => a.stock - b.stock),
     [products, filter]
   );
 
@@ -30,7 +31,11 @@ export default function AdminStock() {
           <tbody className="divide-y divide-ink/5">
             {list.map((p) => (
               <tr key={p.id}>
-                <td className="p-3"><span className="mr-2 text-xl">{p.emoji}</span><span className="font-semibold">{p.name}</span></td>
+                <td className="p-3">
+                  <span className="mr-2 inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-ink/5 align-middle text-xl">{p.image ? <img src={p.image} alt="" className="h-full w-full object-cover" /> : p.emoji}</span>
+                  <span className="font-semibold">{p.name}</span>
+                  {p.sample && <span className="ml-2"><Badge tone="gold">Sample</Badge></span>}
+                </td>
                 <td><Badge tone={p.stock === 0 ? 'danger' : p.stock <= 10 ? 'gold' : 'success'}>{p.stock === 0 ? 'Out of stock' : p.stock <= 10 ? 'Low stock' : 'In stock'}</Badge></td>
                 <td className="pr-3">
                   <div className="ml-auto flex w-fit items-center gap-1">
@@ -52,7 +57,11 @@ export default function AdminStock() {
             ))}
           </tbody>
         </table>
-        {list.length === 0 && <p className="p-8 text-center text-sm text-ink/50">Nothing here — great!</p>}
+        {list.length === 0 && (
+          <p className="p-8 text-center text-sm text-ink/50">
+            {filter === 'mine' ? <>You have not added any items yet. <Link to="/admin/products" className="font-semibold text-brand hover:underline">Add your first item</Link></> : 'Nothing here — great!'}
+          </p>
+        )}
       </div>
     </div>
   );

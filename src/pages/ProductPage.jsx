@@ -4,11 +4,13 @@ import useProducts from '../hooks/useProducts.js';
 import ProductDetails from '../components/products/ProductDetails.jsx';
 import RelatedProducts from '../components/products/RelatedProducts.jsx';
 import NotFound from './NotFound.jsx';
+import Loader from '../components/common/Loader.jsx';
 
 export default function ProductPage() {
   const { id } = useParams();
-  const { getProduct, categories } = useProducts();
+  const { getProduct, categories, loading } = useProducts();
   const product = getProduct(id);
+  if (!product && loading) return <Loader label="Loading product…" />;
   if (!product) return <NotFound message="We couldn't find that product — it may have been removed." />;
   const category = categories.find((c) => c.slug === product.category);
 
