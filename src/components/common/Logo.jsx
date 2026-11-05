@@ -33,8 +33,8 @@ export default function Logo({ variant = 'horizontal', to = '/', className = '',
         </div>
       </div>
     ) : (
-      <div className="flex items-center gap-3">
-        <LogoIcon className="h-11 w-11 shrink-0" />
+      <div className={`flex items-center ${responsiveText ? 'gap-2 sm:gap-3' : 'gap-3'}`}>
+        <LogoIcon className={`shrink-0 ${responsiveText ? 'h-9 w-9 sm:h-11 sm:w-11' : 'h-11 w-11'}`} />
         <div className={`leading-none ${responsiveText ? 'hidden min-[400px]:block' : ''}`}>
           <p className="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">ALI HASSAN</p>
           <p className="mt-1 font-display text-[10px] font-semibold tracking-[0.38em] text-brand sm:text-[11px]">SUPERMART</p>

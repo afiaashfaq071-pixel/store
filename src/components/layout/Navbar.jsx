@@ -49,8 +49,8 @@ export default function Navbar() {
 
   return (
     <header className={`sticky top-0 z-40 transition-all duration-300 ${scrolled ? 'bg-surface/90 shadow-soft backdrop-blur-lg' : 'bg-cream'}`}>
-      <div className={`container-page relative flex items-center gap-3 transition-all duration-300 ${scrolled ? 'py-2' : 'py-4'}`}>
-        <button className="rounded-full p-2 hover:bg-ink/5 lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+      <div className={`container-page relative flex items-center gap-1.5 transition-all duration-300 max-[359px]:px-3 sm:gap-3 ${scrolled ? 'py-2' : 'py-3 sm:py-4'}`}>
+        <button className="shrink-0 rounded-full p-1.5 hover:bg-ink/5 sm:p-2 lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">
           <Menu className="h-6 w-6" />
         </button>
 
@@ -110,15 +110,15 @@ export default function Navbar() {
         {/* Desktop search */}
         <ProductSearch className="mx-4 hidden max-w-md flex-1 xl:block" />
 
-        <div className="ml-auto flex items-center gap-1">
-          <button className="rounded-full p-2.5 hover:bg-ink/5 xl:hidden" onClick={() => setSearchOpen((v) => !v)} aria-label="Toggle search">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <button className="rounded-full p-2 hover:bg-ink/5 sm:p-2.5 xl:hidden" onClick={() => setSearchOpen((v) => !v)} aria-label="Toggle search">
             <Search className="h-5 w-5" />
           </button>
-          <Link to="/wishlist" className="relative rounded-full p-2.5 hover:bg-ink/5" aria-label={`Wishlist, ${wishCount} items`}>
+          <Link to="/wishlist" className="relative rounded-full p-2 hover:bg-ink/5 sm:p-2.5" aria-label={`Wishlist, ${wishCount} items`}>
             <Heart className="h-5 w-5" />
             {wishCount > 0 && <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white">{wishCount}</span>}
           </Link>
-          <button onClick={openCart} className="relative flex items-center gap-2 rounded-full bg-brand px-3 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark sm:px-4" aria-label={`Open cart, ${count} items`}>
+          <button onClick={openCart} className="relative flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-2.5 py-2 text-sm font-semibold text-white hover:bg-brand-dark sm:gap-2 sm:px-4 sm:py-2.5" aria-label={`Open cart, ${count} items`}>
             <ShoppingCart className="h-5 w-5" />
             <span className="hidden sm:inline">Cart</span>
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-bold text-charcoal" data-testid="cart-count">{count}</span>
