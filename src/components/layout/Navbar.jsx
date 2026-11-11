@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown, Heart, Menu, Search, ShoppingCart, X } from 'lucide-react';
+import { ChevronDown, Heart, Lock, Menu, Search, ShoppingCart, X } from 'lucide-react';
 import Logo from '../common/Logo.jsx';
 import ProductSearch from '../products/ProductSearch.jsx';
 import useCart from '../../hooks/useCart.js';
@@ -111,6 +111,10 @@ export default function Navbar() {
         <ProductSearch className="mx-4 hidden max-w-md flex-1 xl:block" />
 
         <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <Link to="/admin" className="hidden items-center gap-1.5 rounded-full p-2.5 text-sm font-semibold hover:bg-ink/5 lg:inline-flex" aria-label="Admin login">
+            <Lock className="h-5 w-5" aria-hidden="true" />
+            <span className="hidden xl:inline">Admin</span>
+          </Link>
           <button className="rounded-full p-2 hover:bg-ink/5 sm:p-2.5 xl:hidden" onClick={() => setSearchOpen((v) => !v)} aria-label="Toggle search">
             <Search className="h-5 w-5" />
           </button>
@@ -155,6 +159,9 @@ export default function Navbar() {
                 </Link>
               ))}
             </div>
+            <Link to="/admin" className="mt-6 flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand-dark">
+              <Lock className="h-4 w-4" aria-hidden="true" />Admin
+            </Link>
           </aside>
         </div>
       )}
