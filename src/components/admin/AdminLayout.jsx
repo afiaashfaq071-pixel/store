@@ -33,6 +33,19 @@ export default function AdminLayout() {
     refreshOrders();
   }, [refreshProducts, refreshOrders]);
 
+  // While the side menu is open: stop the page behind it from scrolling and let Escape close it.
+  useEffect(() => {
+    if (!open) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
   const sidebar = (
     <div className="flex h-full flex-col bg-charcoal p-5 text-white">
       <div className="mb-8 flex items-center justify-between">

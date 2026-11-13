@@ -1,18 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { CheckCircle2, MessageCircle, Wallet } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Wallet } from 'lucide-react';
 import useCart from '../hooks/useCart.js';
 import useOrders from '../hooks/useOrders.js';
-import useSettings from '../hooks/useSettings.js';
 import CartSummary from '../components/cart/CartSummary.jsx';
 import EmptyCart from '../components/cart/EmptyCart.jsx';
 import StockNotice from '../components/cart/StockNotice.jsx';
 import Button from '../components/common/Button.jsx';
-import StateIllustration from '../components/common/StateIllustration.jsx';
 import ProductImage from '../components/common/ProductImage.jsx';
 import { formatPKR } from '../utils/format.js';
-import { isSupabaseEnabled } from '../lib/supabase.js';
-import { buildOrderMessage, whatsappLink } from '../utils/notify.js';
+import { saveMyOrder } from '../utils/myOrders.js';
 
 const cities = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Multan', 'Peshawar', 'Quetta', 'Sialkot', 'Gujranwala', 'Hyderabad', 'Other'];
 const phoneRe = /^(\+92|0)?3\d{2}[- ]?\d{7}$/;
@@ -20,10 +17,9 @@ const phoneRe = /^(\+92|0)?3\d{2}[- ]?\d{7}$/;
 export default function Checkout() {
   const cart = useCart();
   const { placeOrder } = useOrders();
-  const { ownerContact } = useSettings();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', phone: '', address: '', city: 'Lahore', notes: '' });
   const [errors, setErrors] = useState({});
-  const [order, setOrder] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -58,9 +54,10 @@ export default function Checkout() {
         coupon: cart.coupon?.code || null,
         payment: 'Cash on Delivery',
       });
+      // The order really exists now: keep a copy on this device, empty the cart, open the confirmation page.
+      saveMyOrder(record);
       cart.clearCart();
-      setOrder(record);
-      window.scrollTo({ top: 0 });
+      navigate(`/order/${encodeURIComponent(record.id)}`, { replace: true, state: { order: record } });
     } catch (err) {
       // The cart is left untouched so the customer can simply try again.
       const offline = err instanceof TypeError;
@@ -69,48 +66,6 @@ export default function Checkout() {
       setSubmitting(false);
     }
   };
-
-  /* ---------- Confirmation screen ---------- */
-  if (order) {
-    return (
-      <div className="container-page py-10">
-        <div className="mx-auto max-w-2xl rounded-3xl bg-surface p-6 text-center shadow-soft sm:p-10">
-          <StateIllustration icon={CheckCircle2} tone="success" className="mx-auto" />
-          <h1 className="mt-3 text-3xl font-extrabold">Order placed!</h1>
-          <p className="mt-2 text-ink/70">Thank you, <b>{order.customer.name}</b>. Your order <b className="text-brand">{order.id}</b> has been recorded.</p>
-
-          <div className="mt-6 rounded-2xl bg-cream p-5 text-left text-sm">
-            <p className="font-bold">Delivering to</p>
-            <p className="text-ink/70">{order.customer.address}, {order.customer.city}, Pakistan</p>
-            <p className="text-ink/70">Phone: {order.customer.phone}</p>
-            <ul className="mt-4 space-y-2 border-t border-ink/10 pt-4">
-              {order.items.map((i) => (
-                <li key={i.id} className="flex justify-between gap-3"><span>{i.name} × {i.qty}</span><span className="font-semibold">{formatPKR(i.price * i.qty)}</span></li>
-              ))}
-            </ul>
-            <div className="mt-3 flex justify-between border-t border-dashed border-ink/20 pt-3 text-base font-extrabold"><span>Total (Cash on Delivery)</span><span className="text-brand">{formatPKR(order.total)}</span></div>
-          </div>
-
-          <p className="mt-5 text-sm text-ink/60">Pay in cash when your order arrives. We will contact you on {order.customer.phone} if we need anything.</p>
-          {ownerContact.phone ? (
-            <p className="mt-2 text-xs text-ink/50">The WhatsApp button opens WhatsApp with your order message already written — nothing is sent until you press send there.</p>
-          ) : (
-            <p className="mt-2 text-xs text-ink/50">This store has not set a WhatsApp number yet, so no WhatsApp message is available for this order.</p>
-          )}
-          {!isSupabaseEnabled && <p className="mt-3 rounded-xl bg-gold/20 p-3 text-xs text-ink/70">Demo store: this order is saved only in this browser. It is not sent to a real shop and no payment or delivery takes place.</p>}
-
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button to="/shop">Continue Shopping</Button>
-            {ownerContact.phone && (
-              <a href={whatsappLink(ownerContact.phone, buildOrderMessage(order))} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-success px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-success-dark">
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />Send order on WhatsApp
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (cart.items.length === 0) {
     return (

@@ -42,6 +42,17 @@ export default function Navbar() {
   }, [location.pathname, location.search]);
 
   const isActive = (l) => {
+    useEffect(() => {
+      if (!menuOpen) return undefined;
+      const previous = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      const onKey = (e) => e.key === 'Escape' && setMenuOpen(false);
+      window.addEventListener('keydown', onKey);
+      return () => {
+        document.body.style.overflow = previous;
+        window.removeEventListener('keydown', onKey);
+      };
+    }, [menuOpen]);
     if (l.match) return location.pathname === '/shop' && new URLSearchParams(location.search).has(l.match);
     if (l.to === '/shop') return location.pathname === '/shop' && !location.search.includes('deals') && !location.search.includes('best');
     return null;
